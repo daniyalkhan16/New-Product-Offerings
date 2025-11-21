@@ -1,0 +1,465 @@
+
+html_content = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telecom Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --text-light: #ecf0f1;
+            --text-dark: #2c3e50;
+            --bg-light: #f4f6f7;
+            --card-bg: #ffffff;
+            --success: #27ae60;
+            --warning: #f39c12;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 250px;
+            background-color: var(--primary);
+            color: var(--text-light);
+            position: fixed;
+            height: 100%;
+            padding-top: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--secondary);
+            padding-bottom: 10px;
+        }
+
+        .nav-link {
+            padding: 15px 25px;
+            text-decoration: none;
+            color: var(--text-light);
+            transition: 0.3s;
+            font-size: 1.1rem;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--secondary);
+            border-left: 5px solid var(--accent);
+        }
+
+        .authors {
+            margin-top: auto;
+            padding: 20px;
+            font-size: 0.85rem;
+            color: #bdc3c7;
+            border-top: 1px solid var(--secondary);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 40px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .header .badge {
+            background-color: var(--accent);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        /* Dashboard Grid */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--secondary);
+            font-size: 1.2rem;
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            grid-column: span 3;
+            text-align: center;
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin: 10px 0;
+        }
+
+        .kpi-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        /* Strategy Section */
+        .strategy-card {
+            grid-column: span 12;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .strategy-card h3 {
+            color: white;
+            border-bottom-color: rgba(255,255,255,0.2);
+        }
+
+        .strategy-flex {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            text-align: center;
+        }
+
+        .strategy-box {
+            flex: 1;
+            padding: 10px;
+        }
+
+        .strategy-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        /* Charts */
+        .chart-card {
+            grid-column: span 6;
+            height: 400px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Pipeline Visual */
+        .pipeline-card {
+            grid-column: span 12;
+        }
+
+        .pipeline-diagram {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .pipeline-step {
+            background: var(--bg-light);
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            width: 15%;
+            position: relative;
+        }
+
+        .pipeline-step::after {
+            content: '→';
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            color: var(--secondary);
+            font-weight: bold;
+        }
+
+        .pipeline-step:last-child::after {
+            content: '';
+        }
+
+        .pipeline-step h4 {
+            margin: 5px 0;
+            color: var(--primary);
+        }
+
+        .pipeline-step p {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+
+        /* Dataset Comparison */
+        .dataset-row {
+            grid-column: span 12;
+            display: flex;
+            gap: 20px;
+        }
+
+        .dataset-card {
+            flex: 1;
+            border-left: 5px solid;
+        }
+
+        .ds-a { border-color: var(--accent); }
+        .ds-b { border-color: var(--success); }
+
+        ul {
+            padding-left: 20px;
+            color: #555;
+        }
+        
+        li {
+            margin-bottom: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Telecom Analytics</h2>
+        <a href="#" class="nav-link active">Dashboard Overview</a>
+        <a href="#" class="nav-link">Data Sources</a>
+        <a href="#" class="nav-link">Pipeline Architecture</a>
+        <a href="#" class="nav-link">Model Performance</a>
+        
+        <div class="authors">
+            <p><strong>Lead Architects:</strong><br>Muhammad Afaq Khan<br>Muhammad Danyal Khan<br>IMSciences Peshawar</p>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <div class="header">
+            <div>
+                <h1>Project Dashboard</h1>
+                <p style="color: #7f8c8d; margin-top: 5px;">Case Study: Telecommunication New Product Offerings</p>
+            </div>
+            <div class="badge">Status: Production Ready</div>
+        </div>
+
+        <div class="grid-container">
+
+            <div class="card strategy-card">
+                <h3>Strategy: Hybrid Behavioral & Sentiment Analytics</h3>
+                <div class="strategy-flex">
+                    <div class="strategy-box">
+                        <div class="strategy-icon">🧠</div>
+                        <h4>Twin-Engine Architecture</h4>
+                        <p>Combining behavioral data with sentiment analysis for 360° view.</p>
+                    </div>
+                    <div class="strategy-box">
+                        <div class="strategy-icon">🎯</div>
+                        <h4>Targeted Segmentation</h4>
+                        <p>Using K-Means to identify hidden customer personas.</p>
+                    </div>
+                    <div class="strategy-box">
+                        <div class="strategy-icon">🔮</div>
+                        <h4>Adoption Prediction</h4>
+                        <p>Using XGBoost to predict "Switching Likelihood".</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card kpi-card">
+                <h3>Total Records</h3>
+                <div class="kpi-value">1.5 Billion</div>
+                <div class="kpi-label">Historical Data Points</div>
+            </div>
+            <div class="card kpi-card">
+                <h3>Daily Users</h3>
+                <div class="kpi-value">600,000+</div>
+                <div class="kpi-label">Active Daily Users</div>
+            </div>
+            <div class="card kpi-card">
+                <h3>Global Coverage</h3>
+                <div class="kpi-value">250</div>
+                <div class="kpi-label">Countries Analyzed</div>
+            </div>
+            <div class="card kpi-card">
+                <h3>Model Recall</h3>
+                <div class="kpi-value">High</div>
+                <div class="kpi-label">Optimized for Revenue</div>
+            </div>
+
+            <div class="dataset-row">
+                <div class="card dataset-card ds-a">
+                    <h3>Stream A: ExactOne (Behavioral)</h3>
+                    <p><strong>Role:</strong> Analysis of Spending Power & Habits</p>
+                    <ul>
+                        <li><strong>Volume:</strong> 250 Million+ Transactions/Year</li>
+                        <li><strong>Key Features:</strong> Transaction Amount, Merchant Name, Salary Band</li>
+                        <li><strong>Goal:</strong> Defines "Ability to Pay"</li>
+                    </ul>
+                </div>
+                <div class="card dataset-card ds-b">
+                    <h3>Stream B: Rwazi (Sentiment)</h3>
+                    <p><strong>Role:</strong> Analysis of Satisfaction & Churn Risk</p>
+                    <ul>
+                        <li><strong>History:</strong> 6 Months Sentiment Data</li>
+                        <li><strong>Key Features:</strong> Price Sensitivity, Speed Importance, Switch Index</li>
+                        <li><strong>Goal:</strong> Defines "Willingness to Change"</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card pipeline-card">
+                <h3>End-to-End Big Data Pipeline</h3>
+                <div class="pipeline-diagram">
+                    <div class="pipeline-step">
+                        <h4>Ingestion</h4>
+                        <p>AWS Glue (Batch)<br>Kafka (Stream)</p>
+                    </div>
+                    <div class="pipeline-step">
+                        <h4>Storage</h4>
+                        <p>Amazon S3<br>(Bronze/Silver)</p>
+                    </div>
+                    <div class="pipeline-step">
+                        <h4>Processing</h4>
+                        <p>Apache Spark<br>(Cleaning & ETL)</p>
+                    </div>
+                    <div class="pipeline-step">
+                        <h4>Modeling</h4>
+                        <p>Spark MLlib (K-Means)<br>XGBoost</p>
+                    </div>
+                    <div class="pipeline-step">
+                        <h4>Serving</h4>
+                        <p>Snowflake DW<br>PowerBI Dashboard</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-card">
+                <h3>Customer Segmentation (K-Means Results)</h3>
+                <div class="chart-container">
+                    <canvas id="segmentChart"></canvas>
+                </div>
+                <p style="text-align: center; font-size: 0.9rem; color: #7f8c8d; margin-top: 10px;">
+                    <em>Visualizing distinct personas based on spending behavior.</em>
+                </p>
+            </div>
+
+            <div class="card chart-card">
+                <h3>Feature Importance (XGBoost Prediction)</h3>
+                <div class="chart-container">
+                    <canvas id="featureChart"></canvas>
+                </div>
+                <p style="text-align: center; font-size: 0.9rem; color: #7f8c8d; margin-top: 10px;">
+                    <em>Key drivers influencing a customer's decision to switch.</em>
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Chart 1: Customer Segments (Pie Chart)
+        const ctx1 = document.getElementById('segmentChart').getContext('2d');
+        const segmentChart = new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['Budget Streamers', 'High-Income Travelers', 'Tech Enthusiasts', 'Casual Users'],
+                datasets: [{
+                    data: [35, 20, 25, 20],
+                    backgroundColor: [
+                        '#3498db',
+                        '#e74c3c',
+                        '#f1c40f',
+                        '#95a5a6'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Chart 2: Feature Importance (Bar Chart)
+        const ctx2 = document.getElementById('featureChart').getContext('2d');
+        const featureChart = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: ['Network Speed', 'Price Sensitivity', 'Switching Index', 'Roaming Usage', 'Content Bundle'],
+                datasets: [{
+                    label: 'Importance Score',
+                    data: [0.85, 0.72, 0.65, 0.40, 0.30],
+                    backgroundColor: '#2ecc71',
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+"""
+
+with open('Telecom_Analytics_Dashboard.html', 'w') as f:
+    f.write(html_content)
